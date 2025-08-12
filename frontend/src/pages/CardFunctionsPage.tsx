@@ -1,4 +1,4 @@
-import { Box, Button, Container, Paper, Stack, TextField, Typography, Alert, Divider } from '@mui/material'
+import { Box, Button, Container, Paper, Stack, TextField, Typography, Alert, Divider, Grid, Chip, Card, CardContent, Table, TableHead, TableRow, TableCell, TableBody, LinearProgress } from '@mui/material'
 import { useState } from 'react'
 import { useAuth } from '../lib/auth'
 import { api, authHeaders } from '../lib/http'
@@ -9,6 +9,17 @@ export default function CardFunctionsPage() {
   const [status, setStatus] = useState<any>(null)
   const [txs, setTxs] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
+
+  function formatCurrency(n: number | string) {
+    const num = typeof n === 'string' ? Number(n) : n
+    if (Number.isNaN(num)) return String(n)
+    return num.toLocaleString(undefined, { style: 'currency', currency: 'INR', maximumFractionDigits: 2 })
+  }
+
+  function formatDateTime(iso: string) {
+    const d = new Date(iso)
+    return isNaN(d.getTime()) ? iso : d.toLocaleString()
+  }
 
   async function fetchStatus() {
     setError(null)
@@ -52,16 +63,76 @@ export default function CardFunctionsPage() {
         </Stack>
         {status && (
           <Box sx={{ mt: 3 }}>
-            <Typography variant="subtitle1">Status</Typography>
-            <pre>{JSON.stringify(status, null, 2)}</pre>
+            <Typography variant="subtitle1" gutterBottom>Card Overview</Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={4}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="overline">Status</Typography>
+                    <Box>
+                      <Chip
+                        label={status.status}
+                        color={status.status === 'ACTIVE' ? 'success' : status.status === 'BLOCKED' ? 'error' : 'warning'}
+                        variant="outlined"
+                        sx={{ mt: 1 }}
+                      />
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="overline">Credit Limit</Typography>
+                    <Typography variant="h6">{formatCurrency(status.creditLimit)}</Typography>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Typography variant="overline">Remaining</Typography>
+                    <Typography variant="h6">{formatCurrency(status.remainingLimit)}</Typography>
+                    {status.creditLimit > 0 && (
+                      <Box sx={{ mt: 1 }}>
+                        <LinearProgress variant="determinate" value={Math.max(0, Math.min(100, (status.remainingLimit / status.creditLimit) * 100))} />
+                        <Typography variant="caption">{Math.round((status.remainingLimit / status.creditLimit) * 100)}% left</Typography>
+                      </Box>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
           </Box>
         )}
-        {!!txs.length && (
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="subtitle1">Recent Transactions</Typography>
-            <pre>{JSON.stringify(txs, null, 2)}</pre>
-          </Box>
-        )}
+
+        <Box sx={{ mt: 4 }}>
+          <Typography variant="subtitle1" gutterBottom>Recent Transactions</Typography>
+          {!txs.length ? (
+            <Typography variant="body2" color="text.secondary">No transactions to show.</Typography>
+          ) : (
+            <Paper variant="outlined" sx={{ width: '100%', overflowX: 'auto' }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Date</TableCell>
+                    <TableCell>Description</TableCell>
+                    <TableCell align="right">Amount</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {txs.map((t) => (
+                    <TableRow key={t.id} hover>
+                      <TableCell>{formatDateTime(t.when)}</TableCell>
+                      <TableCell>{t.desc}</TableCell>
+                      <TableCell align="right">{formatCurrency(t.amount)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Paper>
+          )}
+        </Box>
       </Paper>
     </Container>
   )
