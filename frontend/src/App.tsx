@@ -8,6 +8,7 @@ import CardManagePage from './pages/CardManagePage'
 import CardUpdatePage from './pages/CardUpdatePage'
 import TestingToolPage from './pages/TestingToolPage'
 import { AuthProvider, useAuth } from './lib/auth'
+import TopBar from './components/TopBar'
 
 const theme = createTheme()
 
@@ -29,6 +30,7 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <AuthProvider>
+        <TopBar />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
